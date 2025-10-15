@@ -17,8 +17,8 @@ describe('App', () => {
       const response = await request(app).get('/unknown-route');
 
       expect(response.status).toBe(404);
-      expect(response.body).toHaveProperty('status', 'error');
-      expect(response.body).toHaveProperty('message', 'Route not found');
+      expect(response.body).toHaveProperty('error', 'Not Found');
+      expect(response.body).toHaveProperty('message', 'The requested resource was not found');
     });
   });
 });

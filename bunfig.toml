@@ -1,0 +1,10 @@
+[test]
+preload = ["./src/lib/prisma.ts"]
+
+[install]
+# Install dependencies from npm registry
+registry = "https://registry.npmjs.org"
+
+[run]
+# Use hot-reload in development
+watch = true

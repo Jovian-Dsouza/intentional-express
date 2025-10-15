@@ -10,27 +10,214 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
+// User model - Enhanced for Intentional platform
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  posts     Post[]
+  id                    String    @id // wallet address
+  
+  // Zora Profile (cached)
+  zoraUsername          String?
+  zoraAvatar            String?
+  zoraBio               String?
+  creatorCoinAddress    String?
+  profileCachedAt       DateTime?
+  
+  // Reputation
+  reputationScore       Int       @default(0)
+  reputationTier        String    @default("newcomer")
+  
+  // Settings (JSON)
+  settings              Json      @default("{\"reputationModeDefault\":false,\"notificationsEnabled\":true,\"privacyLevel\":\"public\"}")
+  
+  // Stats
+  totalIntentsCreated   Int       @default(0)
+  totalMatches          Int       @default(0)
+  successRate           Float     @default(0)
+  
+  // Lifecycle
+  onboardedAt           DateTime  @default(now())
+  lastActiveAt          DateTime  @default(now())
+  
+  // Relations
+  intents               Intent[]
+  swipes                Swipe[]
+  matchesAsUser1        Match[]   @relation("User1Matches")
+  matchesAsUser2        Match[]   @relation("User2Matches")
 
   @@map("users")
 }
 
-model Post {
-  id        String   @id @default(cuid())
-  title     String
-  content   String?
-  published Boolean  @default(false)
-  authorId  String
-  author    User     @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+// Intent model - Core entity
+model Intent {
+  id                    String      @id @default(cuid())
+  userId                String
+  
+  // Intent Details
+  type                  IntentType
+  title                 String
+  description           String
+  visibility            Visibility  @default(public)
+  reputationEnabled     Boolean     @default(false)
+  status                IntentStatus @default(pending_payment)
+  
+  // Media (JSON arrays for IPFS hashes)
+  images                Json        @default("[]") // IPFSMedia[]
+  video                 Json?                      // IPFSMedia | null
+  
+  // Metadata
+  tags                  String[]
+  metadata              Json        @default("{}")
+  
+  // Payment
+  activationFee         String?
+  activationFeeUsd      String?
+  paymentAddress        String?
+  paymentExpiresAt      DateTime?
+  paymentTxHash         String?
+  
+  // On-chain
+  onChainTxHash         String?
+  smartContractAddress  String?
+  burnTxHash            String?
+  
+  // Lifecycle
+  createdAt             DateTime    @default(now())
+  publishedAt           DateTime?
+  expiresAt             DateTime
+  matchedAt             DateTime?
+  
+  // Relations
+  user                  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  swipesReceived        Swipe[]     @relation("TargetIntent")
+  swipesGiven           Swipe[]     @relation("UserIntent")
+  matchesAsIntent1      Match[]     @relation("Intent1Matches")
+  matchesAsIntent2      Match[]     @relation("Intent2Matches")
 
-  @@index([authorId])
-  @@map("posts")
+  @@index([userId, status])
+  @@index([status, expiresAt])
+  @@index([type, publishedAt])
+  @@index([visibility, status])
+  @@map("intents")
+}
+
+// Swipe model - User interactions
+model Swipe {
+  id                    String      @id @default(cuid())
+  userId                String
+  intentId              String
+  targetIntentId        String
+  action                SwipeAction
+  
+  // Metadata
+  viewDuration          Int?        // milliseconds
+  mediaViewed           String[]    @default([])
+  
+  // Timestamps
+  swipedAt              DateTime    @default(now())
+  
+  // Relations
+  user                  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userIntent            Intent      @relation("UserIntent", fields: [intentId], references: [id], onDelete: Cascade)
+  targetIntent          Intent      @relation("TargetIntent", fields: [targetIntentId], references: [id], onDelete: Cascade)
+
+  @@unique([intentId, targetIntentId])
+  @@index([userId, intentId])
+  @@index([targetIntentId, action])
+  @@map("swipes")
+}
+
+// Match model - Mutual matches
+model Match {
+  id                    String      @id @default(cuid())
+  
+  // Participants
+  user1Id               String
+  user2Id               String
+  intent1Id             String
+  intent2Id             String
+  
+  // State
+  status                MatchStatus @default(pending)
+  
+  // On-chain
+  finalizeTxHash        String?
+  burnedAt              DateTime?
+  
+  // Chat
+  chatSessionId         String?     @unique
+  chatExpiresAt         DateTime?
+  
+  // Lifecycle
+  matchedAt             DateTime    @default(now())
+  finalizedAt           DateTime?
+  
+  // Relations
+  user1                 User        @relation("User1Matches", fields: [user1Id], references: [id], onDelete: Cascade)
+  user2                 User        @relation("User2Matches", fields: [user2Id], references: [id], onDelete: Cascade)
+  intent1               Intent      @relation("Intent1Matches", fields: [intent1Id], references: [id], onDelete: Cascade)
+  intent2               Intent      @relation("Intent2Matches", fields: [intent2Id], references: [id], onDelete: Cascade)
+  chatSession           ChatSession?
+
+  @@unique([intent1Id, intent2Id])
+  @@index([user1Id, status])
+  @@index([user2Id, status])
+  @@index([status, matchedAt])
+  @@map("matches")
+}
+
+// ChatSession model - Ephemeral messaging
+model ChatSession {
+  id                    String      @id @default(cuid())
+  matchId               String      @unique
+  
+  // Encryption
+  encryptionKey         String
+  
+  // Status
+  active                Boolean     @default(true)
+  messagesExchanged     Int         @default(0)
+  
+  // Lifecycle
+  createdAt             DateTime    @default(now())
+  lastActivityAt        DateTime    @default(now())
+  expiresAt             DateTime
+  terminatedAt          DateTime?
+  
+  // Relations
+  match                 Match       @relation(fields: [matchId], references: [id], onDelete: Cascade)
+
+  @@index([active, expiresAt])
+  @@map("chat_sessions")
+}
+
+// Enums
+enum IntentType {
+  collaboration
+  hiring
+  networking
+  dating
+}
+
+enum Visibility {
+  public
+  private
+}
+
+enum IntentStatus {
+  pending_payment
+  active
+  matched
+  expired
+  burned
+}
+
+enum SwipeAction {
+  right
+  left
+}
+
+enum MatchStatus {
+  pending
+  finalizing
+  finalized
+  expired
 }

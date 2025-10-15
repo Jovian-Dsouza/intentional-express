@@ -8,5 +8,13 @@ module.exports = {
     'src/**/*.ts',
     '!src/**/*.test.ts',
     '!src/**/*.spec.ts',
+    '!src/types/**/*.ts',
   ],
+  setupFilesAfterEnv: ['<rootDir>/src/test/setup.ts'],
+  testTimeout: 10000,
+  globals: {
+    'ts-jest': {
+      isolatedModules: true,
+    },
+  },
 };
