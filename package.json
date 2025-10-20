@@ -1,5 +1,5 @@
 {
-  "name": "intentional-express",
+  "name": "originals-express",
   "version": "1.0.0",
   "description": "Express backend with TypeScript, PostgreSQL, and Prisma",
   "main": "dist/index.js",

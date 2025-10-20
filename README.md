@@ -1,4 +1,4 @@
-# Intentional Express Backend
+# Originals Express Backend
 
 A modern Express.js backend server built with TypeScript, PostgreSQL, and Prisma ORM.
 
@@ -23,7 +23,7 @@ A modern Express.js backend server built with TypeScript, PostgreSQL, and Prisma
 
 1. **Clone the repository**
    ```bash
-   cd /Users/jovian/Developer/intentional/intentional-express
+   cd /Users/jovian/Developer/base/originals/originals-express
    ```
 
 2. **Install dependencies**
@@ -110,7 +110,7 @@ npm run test:watch
 ## 📁 Project Structure
 
 ```
-intentional-express/
+originals-express/
 ├── src/
 │   ├── __tests__/         # Test files
 │   ├── lib/               # Utilities and libraries
