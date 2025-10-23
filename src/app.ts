@@ -3,9 +3,9 @@ import cors from 'cors';
 import helmet from 'helmet';
 import morgan from 'morgan';
 import { errorHandler } from './middleware/errorHandler';
-// Old routes - will be replaced with new Intent APIs
-// import usersRouter from './routes/users';
-// import postsRouter from './routes/posts';
+import collabRoutes from './routes/collab.routes';
+import pingRoutes from './routes/ping.routes';
+import matchRoutes from './routes/match.routes';
 
 const app: Application = express();
 
@@ -16,9 +16,12 @@ app.use(morgan('dev'));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// API routes (old routes commented out - will be replaced with new Intent APIs)
-// app.use('/api/users', usersRouter);
-// app.use('/api/posts', postsRouter);
+// API routes
+app.use('/api/collabs', collabRoutes);
+app.use('/api/wallets', pingRoutes);
+app.use('/api/wallets', matchRoutes);
+app.use('/api/pings', pingRoutes);
+app.use('/api/matches', matchRoutes);
 
 // Health check
 app.get('/health', (_req: Request, res: Response) => {

@@ -10,214 +10,154 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// User model - Enhanced for Intentional platform
-model User {
-  id                    String    @id // wallet address
-  
-  // Zora Profile (cached)
-  zoraUsername          String?
-  zoraAvatar            String?
-  zoraBio               String?
-  creatorCoinAddress    String?
-  profileCachedAt       DateTime?
-  
-  // Reputation
-  reputationScore       Int       @default(0)
-  reputationTier        String    @default("newcomer")
-  
-  // Settings (JSON)
-  settings              Json      @default("{\"reputationModeDefault\":false,\"notificationsEnabled\":true,\"privacyLevel\":\"public\"}")
-  
-  // Stats
-  totalIntentsCreated   Int       @default(0)
-  totalMatches          Int       @default(0)
-  successRate           Float     @default(0)
-  
-  // Lifecycle
-  onboardedAt           DateTime  @default(now())
-  lastActiveAt          DateTime  @default(now())
+// Collaboration Post model - Core entity for collaboration posts
+model CollaborationPost {
+  id            String   @id @default(cuid())
+  coinAddress   String   @unique
+  creatorWallet String
+  role          String
+  paymentType   PaymentType
+  credits       Boolean
+  workStyle     WorkStyle
+  location      String
+  status        CollabStatus @default(open)
+  collaborators Json     // CollaboratorRole[]
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  expiresAt     DateTime?
   
   // Relations
-  intents               Intent[]
-  swipes                Swipe[]
-  matchesAsUser1        Match[]   @relation("User1Matches")
-  matchesAsUser2        Match[]   @relation("User2Matches")
+  pings         Ping[]
+  matches       Match[]
 
-  @@map("users")
+  @@index([creatorWallet])
+  @@index([coinAddress])
+  @@index([status])
+  @@index([createdAt])
+  @@index([location])
+  @@index([paymentType])
+  @@map("collaboration_posts")
 }
 
-// Intent model - Core entity
-model Intent {
-  id                    String      @id @default(cuid())
-  userId                String
-  
-  // Intent Details
-  type                  IntentType
-  title                 String
-  description           String
-  visibility            Visibility  @default(public)
-  reputationEnabled     Boolean     @default(false)
-  status                IntentStatus @default(pending_payment)
-  
-  // Media (JSON arrays for IPFS hashes)
-  images                Json        @default("[]") // IPFSMedia[]
-  video                 Json?                      // IPFSMedia | null
-  
-  // Metadata
-  tags                  String[]
-  metadata              Json        @default("{}")
-  
-  // Payment
-  activationFee         String?
-  activationFeeUsd      String?
-  paymentAddress        String?
-  paymentExpiresAt      DateTime?
-  paymentTxHash         String?
-  
-  // On-chain
-  onChainTxHash         String?
-  smartContractAddress  String?
-  burnTxHash            String?
-  
-  // Lifecycle
-  createdAt             DateTime    @default(now())
-  publishedAt           DateTime?
-  expiresAt             DateTime
-  matchedAt             DateTime?
+// Ping model - User interactions with collaboration posts
+model Ping {
+  id              String     @id @default(cuid())
+  collabPostId    String
+  pingedWallet    String
+  interestedRole  String
+  bio             String
+  status          PingStatus @default(pending)
+  createdAt       DateTime   @default(now())
+  respondedAt     DateTime?
   
   // Relations
-  user                  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  swipesReceived        Swipe[]     @relation("TargetIntent")
-  swipesGiven           Swipe[]     @relation("UserIntent")
-  matchesAsIntent1      Match[]     @relation("Intent1Matches")
-  matchesAsIntent2      Match[]     @relation("Intent2Matches")
+  collabPost      CollaborationPost @relation(fields: [collabPostId], references: [id], onDelete: Cascade)
+  match           Match?
 
-  @@index([userId, status])
-  @@index([status, expiresAt])
-  @@index([type, publishedAt])
-  @@index([visibility, status])
-  @@map("intents")
+  @@unique([collabPostId, pingedWallet])
+  @@index([pingedWallet])
+  @@index([status])
+  @@index([createdAt])
+  @@map("pings")
 }
 
-// Swipe model - User interactions
-model Swipe {
-  id                    String      @id @default(cuid())
-  userId                String
-  intentId              String
-  targetIntentId        String
-  action                SwipeAction
-  
-  // Metadata
-  viewDuration          Int?        // milliseconds
-  mediaViewed           String[]    @default([])
-  
-  // Timestamps
-  swipedAt              DateTime    @default(now())
-  
-  // Relations
-  user                  User        @relation(fields: [userId], references: [id], onDelete: Cascade)
-  userIntent            Intent      @relation("UserIntent", fields: [intentId], references: [id], onDelete: Cascade)
-  targetIntent          Intent      @relation("TargetIntent", fields: [targetIntentId], references: [id], onDelete: Cascade)
-
-  @@unique([intentId, targetIntentId])
-  @@index([userId, intentId])
-  @@index([targetIntentId, action])
-  @@map("swipes")
-}
-
-// Match model - Mutual matches
+// Match model - Accepted collaborations
 model Match {
-  id                    String      @id @default(cuid())
-  
-  // Participants
-  user1Id               String
-  user2Id               String
-  intent1Id             String
-  intent2Id             String
-  
-  // State
-  status                MatchStatus @default(pending)
-  
-  // On-chain
-  finalizeTxHash        String?
-  burnedAt              DateTime?
-  
-  // Chat
-  chatSessionId         String?     @unique
-  chatExpiresAt         DateTime?
-  
-  // Lifecycle
-  matchedAt             DateTime    @default(now())
-  finalizedAt           DateTime?
+  id                String      @id @default(cuid())
+  collabPostId      String
+  creatorWallet     String
+  collaboratorWallet String
+  projectName       String
+  role              String
+  status            MatchStatus  @default(active)
+  createdAt         DateTime    @default(now())
+  lastMessageAt     DateTime    @default(now())
+  unreadCount       Int         @default(0)
   
   // Relations
-  user1                 User        @relation("User1Matches", fields: [user1Id], references: [id], onDelete: Cascade)
-  user2                 User        @relation("User2Matches", fields: [user2Id], references: [id], onDelete: Cascade)
-  intent1               Intent      @relation("Intent1Matches", fields: [intent1Id], references: [id], onDelete: Cascade)
-  intent2               Intent      @relation("Intent2Matches", fields: [intent2Id], references: [id], onDelete: Cascade)
-  chatSession           ChatSession?
+  collabPost        CollaborationPost @relation(fields: [collabPostId], references: [id], onDelete: Cascade)
+  ping              Ping?            @relation(fields: [id], references: [id])
+  messages          Message[]
 
-  @@unique([intent1Id, intent2Id])
-  @@index([user1Id, status])
-  @@index([user2Id, status])
-  @@index([status, matchedAt])
+  @@unique([collabPostId, collaboratorWallet])
+  @@index([creatorWallet])
+  @@index([collaboratorWallet])
+  @@index([status])
+  @@index([lastMessageAt])
   @@map("matches")
 }
 
-// ChatSession model - Ephemeral messaging
-model ChatSession {
-  id                    String      @id @default(cuid())
-  matchId               String      @unique
-  
-  // Encryption
-  encryptionKey         String
-  
-  // Status
-  active                Boolean     @default(true)
-  messagesExchanged     Int         @default(0)
-  
-  // Lifecycle
-  createdAt             DateTime    @default(now())
-  lastActivityAt        DateTime    @default(now())
-  expiresAt             DateTime
-  terminatedAt          DateTime?
+// Message model - Conversation messages
+model Message {
+  id              String      @id @default(cuid())
+  matchId         String
+  senderWallet    String
+  content         String
+  messageType     MessageType @default(text)
+  attachments     Json?       // MessageAttachment[]
+  createdAt       DateTime    @default(now())
+  readAt          DateTime?
   
   // Relations
-  match                 Match       @relation(fields: [matchId], references: [id], onDelete: Cascade)
+  match           Match       @relation(fields: [matchId], references: [id], onDelete: Cascade)
 
-  @@index([active, expiresAt])
-  @@map("chat_sessions")
+  @@index([matchId])
+  @@index([senderWallet])
+  @@index([createdAt])
+  @@map("messages")
 }
 
 // Enums
-enum IntentType {
-  collaboration
-  hiring
-  networking
-  dating
+enum PaymentType {
+  paid
+  barter
+  both
 }
 
-enum Visibility {
-  public
-  private
+enum WorkStyle {
+  contract
+  freestyle
 }
 
-enum IntentStatus {
-  pending_payment
-  active
-  matched
-  expired
-  burned
+enum CreatorType {
+  indie
+  org
+  brand
 }
 
-enum SwipeAction {
-  right
-  left
+enum CompensationType {
+  paid
+  barter
+  both
+}
+
+enum TimeCommitment {
+  ongoing
+  one_time
+}
+
+enum CollabStatus {
+  open
+  shortlisted
+  signed
+  closed
+}
+
+enum PingStatus {
+  pending
+  accepted
+  declined
 }
 
 enum MatchStatus {
-  pending
-  finalizing
-  finalized
-  expired
+  active
+  completed
+  cancelled
+}
+
+enum MessageType {
+  text
+  image
+  file
+  milestone
 }
