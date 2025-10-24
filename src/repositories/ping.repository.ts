@@ -54,8 +54,12 @@ export class PingRepository {
       }
     };
 
+    // By default, only show pending pings (unresponded)
+    // If status is explicitly provided, use that instead
     if (status) {
       where.status = status;
+    } else {
+      where.status = 'pending';
     }
 
     const [pings, total] = await Promise.all([
