@@ -2,6 +2,8 @@ import { Router } from 'express';
 import { CollabController } from '../controllers/collab.controller';
 import { CollabPostRepository } from '../repositories/collabPost.repository';
 import { PingRepository } from '../repositories/ping.repository';
+import { UserRepository } from '../repositories/user.repository';
+import { RankingService } from '../services/ranking.service';
 import { walletAuth } from '../middleware/walletAuth.middleware';
 import { validateBody, validateQuery } from '../middleware/validation.middleware';
 import { 
@@ -17,7 +19,9 @@ const router = Router();
 // Initialize repositories and controller
 const collabPostRepo = new CollabPostRepository(prisma);
 const pingRepo = new PingRepository(prisma);
-const collabController = new CollabController(collabPostRepo, pingRepo);
+const userRepo = new UserRepository(prisma);
+const rankingService = new RankingService(userRepo);
+const collabController = new CollabController(collabPostRepo, pingRepo, rankingService);
 
 // Apply wallet authentication to all routes
 router.use(walletAuth);

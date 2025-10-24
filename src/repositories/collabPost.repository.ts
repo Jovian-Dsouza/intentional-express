@@ -189,6 +189,14 @@ export class CollabPostRepository {
     // Exclude user's own posts
     if (excludeWallet) {
       where.creatorWallet = { not: excludeWallet };
+      // Exclude posts the user has already pinged
+      where.NOT = {
+        pings: {
+          some: {
+            pingedWallet: excludeWallet
+          }
+        }
+      };
     }
 
     const [posts, total] = await Promise.all([

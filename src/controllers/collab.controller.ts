@@ -1,13 +1,15 @@
 import { Request, Response } from 'express';
 import { CollabPostRepository } from '../repositories/collabPost.repository';
 import { PingRepository } from '../repositories/ping.repository';
+import { RankingService } from '../services/ranking.service';
 import { mintCoin, getCachedCoinData } from '../services/zora.service';
 import { UpdateCollabStatusInput, PingCollabInput, MintPostCoinInput } from '../schemas/collab.schema';
 
 export class CollabController {
   constructor(
     private collabPostRepo: CollabPostRepository,
-    private pingRepo: PingRepository
+    private pingRepo: PingRepository,
+    private rankingService: RankingService
   ) {}
 
   async getFeed(req: Request, res: Response): Promise<void> {
@@ -49,9 +51,12 @@ export class CollabController {
         wallet
       );
 
+      // Rank posts by user interests
+      const rankedPosts = await this.rankingService.rankFeedByInterests(result.posts, wallet);
+
       // Fetch coin data for each collaboration post
       const collabsWithCoinData = await Promise.all(
-        result.posts.map(async (collab) => {
+        rankedPosts.map(async (collab) => {
           const coinData = await getCachedCoinData(collab.coinAddress);
           return {
             ...collab,
