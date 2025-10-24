@@ -38,21 +38,12 @@ export const CollaboratorRoleSchema = z.object({
 export const CollaborationSchema = z.object({
   collaborators: z.array(CollaboratorRoleSchema).min(1).max(10),
   expiresAt: z.string().datetime().optional()
-}).refine(
-  (data) => {
-    const totalCredits = data.collaborators.reduce((sum, collab) => sum + collab.credits, 0);
-    return totalCredits === 100;
-  },
-  {
-    message: "Collaborator credits must sum to exactly 100",
-    path: ["collaborators"]
-  }
-);
+});
 
 // Mint PostCoin Schema - New main schema for the API
 export const MintPostCoinSchema = z.object({
   title: z.string().min(1).max(200),
-  description: z.string().min(10).max(2000),
+  description: z.string().min(1).max(2000),
   media: MediaSchema,
   collaboration: CollaborationSchema,
   creatorWallet: z.string().regex(/^0x[a-fA-F0-9]{40}$/, 'Invalid wallet address format'),
@@ -63,7 +54,7 @@ export const MintPostCoinSchema = z.object({
 export const CreateCollabSchema = z.object({
   role: z.string().min(1).max(100),
   paymentType: z.enum(['paid', 'barter', 'both']),
-  credits: z.boolean(),
+  credits: z.number().min(0).max(100),
   workStyle: z.enum(['contract', 'freestyle']),
   location: z.string().min(1).max(100),
   collaborators: z.array(CollaboratorRoleSchema).min(1).max(10),

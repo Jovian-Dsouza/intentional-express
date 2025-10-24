@@ -23,7 +23,7 @@ model CollaborationPost {
   coinSymbol    String
   role          String
   paymentType   PaymentType
-  credits       Boolean
+  credits       Int
   workStyle     WorkStyle
   location      String
   status        CollabStatus @default(open)

@@ -43,8 +43,8 @@ export class CollabPostRepository {
         ? 'paid' 
         : 'barter';
     
-    // Check if any collaborator has credits
-    const credits = data.collaborators.some(c => c.credits > 0);
+    // Sum up all collaborator credits
+    const credits = data.collaborators.reduce((sum, c) => sum + c.credits, 0);
     
     // Determine work style from time commitment
     const workStyle = data.collaborators.some(c => c.timeCommitment === 'ongoing')
@@ -91,8 +91,8 @@ export class CollabPostRepository {
         ? 'paid' 
         : 'barter';
     
-    // Check if any collaborator has credits
-    const credits = data.collaboration.collaborators.some(c => c.credits > 0);
+    // Sum up all collaborator credits
+    const credits = data.collaboration.collaborators.reduce((sum, c) => sum + c.credits, 0);
     
     // Determine work style from time commitment
     const workStyle = data.collaboration.collaborators.some(c => c.timeCommitment === 'ongoing')
