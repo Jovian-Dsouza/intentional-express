@@ -6,6 +6,7 @@ import { errorHandler } from './middleware/errorHandler';
 import collabRoutes from './routes/collab.routes';
 import pingRoutes from './routes/ping.routes';
 import matchRoutes from './routes/match.routes';
+import userRoutes from './routes/user.routes';
 
 const app: Application = express();
 
@@ -22,6 +23,7 @@ app.use('/api/wallets', pingRoutes);
 app.use('/api/wallets', matchRoutes);
 app.use('/api/pings', pingRoutes);
 app.use('/api/matches', matchRoutes);
+app.use('/api/users', userRoutes);
 
 // Health check
 app.get('/health', (_req: Request, res: Response) => {

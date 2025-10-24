@@ -161,3 +161,36 @@ enum MessageType {
   file
   milestone
 }
+
+// User model - User profiles and onboarding data
+model User {
+  id                  String    @id @default(cuid())
+  zoraWalletAddress   String    @unique
+  walletAddress       String?
+  userType            UserType
+  creativeDomains     Json      // string[]
+  status              UserStatus
+  name                String
+  tagline             String
+  orgName             String?
+  orgType             String?
+  skills              Json      // string[]
+  onboardedAt         DateTime  @default(now())
+  createdAt           DateTime  @default(now())
+  updatedAt           DateTime  @updatedAt
+
+  @@index([zoraWalletAddress])
+  @@map("users")
+}
+
+enum UserType {
+  indie
+  commercial
+}
+
+enum UserStatus {
+  available
+  gigs
+  collabs
+  exploring
+}
