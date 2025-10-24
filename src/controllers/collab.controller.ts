@@ -2,7 +2,7 @@ import { Request, Response } from 'express';
 import { CollabPostRepository } from '../repositories/collabPost.repository';
 import { PingRepository } from '../repositories/ping.repository';
 import { mintCoin, getCachedCoinData } from '../services/zora.service';
-import { CreateCollabInput, UpdateCollabStatusInput, PingCollabInput } from '../schemas/collab.schema';
+import { UpdateCollabStatusInput, PingCollabInput, MintPostCoinInput } from '../schemas/collab.schema';
 
 export class CollabController {
   constructor(
@@ -88,33 +88,46 @@ export class CollabController {
 
   async createCollabPost(req: Request, res: Response): Promise<void> {
     try {
-      const collabData: CreateCollabInput = req.body;
+      const collabData: MintPostCoinInput = req.body;
       const wallet = req.wallet!;
+
+      // Generate coin name and symbol from title
+      const coinName = collabData.title;
+      const coinSymbol = collabData.title
+        .replace(/[^a-zA-Z]/g, '')
+        .substring(0, 5)
+        .toUpperCase() || 'POST';
 
       // Mint Zora coin for the collaboration
       const coinMetadata = {
-        name: collabData.role,
-        symbol: collabData.role.substring(0, 5).toUpperCase(),
-        description: `Collaboration opportunity: ${collabData.role}`
+        name: coinName,
+        symbol: coinSymbol,
+        description: collabData.description,
+        media: collabData.media
       };
 
       const mintResult = await mintCoin(coinMetadata);
 
-      // Create collaboration post
-      const createdPost = await this.collabPostRepo.createCollabPost(
+      // Create collaboration post using the new method
+      const createdPost = await this.collabPostRepo.createMintPostCoin(
         collabData,
         wallet,
-        mintResult.coinAddress
+        mintResult.coinAddress,
+        mintResult.coinName,
+        mintResult.coinSymbol
       );
 
       res.status(201).json({
         success: true,
         data: {
-          id: createdPost.id,
+          collabPostId: createdPost.id,
           coinAddress: mintResult.coinAddress,
-          coinMinted: true,
-          message: 'Collaboration post created and Zora coin minted successfully'
-        }
+          coinName: mintResult.coinName,
+          coinSymbol: mintResult.coinSymbol,
+          transactionHash: mintResult.txHash,
+          zoraUrl: mintResult.zoraUrl
+        },
+        message: 'PostCoin minted successfully! Your collaboration is now live.'
       });
     } catch (error) {
       console.error('Error creating collaboration post:', error);

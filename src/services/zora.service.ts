@@ -2,12 +2,23 @@ export interface CoinMetadata {
   name: string;
   symbol: string;
   description: string;
+  media?: {
+    ipfsUrl: string;
+    gatewayUrl: string;
+    fileName: string;
+    fileType: string;
+    fileSize: number;
+  };
 }
 
 export interface MintResult {
   coinAddress: string;
+  coinName: string;
+  coinSymbol: string;
   txHash: string;
+  zoraUrl: string;
 }
+
 
 export interface CoinData {
   name: string;
@@ -84,9 +95,15 @@ export const mintCoin = async (metadata: CoinMetadata): Promise<MintResult> => {
   const timestamp = Date.now().toString(16);
   const txHash = `0x${timestamp.padEnd(32, '0')}${metadataHash.slice(0, 32)}`;
   
+  // Generate Zora URL
+  const zoraUrl = `https://zora.co/collect/base:${coinAddress}`;
+  
   return {
     coinAddress,
-    txHash
+    coinName: metadata.name,
+    coinSymbol: metadata.symbol,
+    txHash,
+    zoraUrl
   };
 };
 

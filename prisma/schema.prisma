@@ -15,6 +15,12 @@ model CollaborationPost {
   id            String   @id @default(cuid())
   coinAddress   String   @unique
   creatorWallet String
+  title         String
+  description   String   @db.Text
+  media         Json     // Media object with ipfsUrl, gatewayUrl, fileName, fileType, fileSize
+  metadata      Json?    // Optional metadata with tags, category, estimatedDuration, budget
+  coinName      String
+  coinSymbol    String
   role          String
   paymentType   PaymentType
   credits       Boolean

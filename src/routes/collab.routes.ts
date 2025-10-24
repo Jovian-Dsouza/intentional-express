@@ -5,7 +5,7 @@ import { PingRepository } from '../repositories/ping.repository';
 import { walletAuth } from '../middleware/walletAuth.middleware';
 import { validateBody, validateQuery } from '../middleware/validation.middleware';
 import { 
-  CreateCollabSchema, 
+  MintPostCoinSchema,
   UpdateCollabStatusSchema, 
   PingCollabSchema, 
   FeedQuerySchema 
@@ -28,9 +28,9 @@ router.get('/feed',
   collabController.getFeed.bind(collabController)
 );
 
-// POST /api/collabs - Create collaboration post
-router.post('/',
-  validateBody(CreateCollabSchema),
+// POST /api/collabs/mint-postcoin - Create collaboration post and mint PostCoin
+router.post('/mint-postcoin',
+  validateBody(MintPostCoinSchema),
   collabController.createCollabPost.bind(collabController)
 );
 
