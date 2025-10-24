@@ -58,7 +58,6 @@ model Ping {
   
   // Relations
   collabPost      CollaborationPost @relation(fields: [collabPostId], references: [id], onDelete: Cascade)
-  match           Match?
 
   @@unique([collabPostId, pingedWallet])
   @@index([pingedWallet])
@@ -82,7 +81,6 @@ model Match {
   
   // Relations
   collabPost        CollaborationPost @relation(fields: [collabPostId], references: [id], onDelete: Cascade)
-  ping              Ping?            @relation(fields: [id], references: [id])
   messages          Message[]
 
   @@unique([collabPostId, collaboratorWallet])
