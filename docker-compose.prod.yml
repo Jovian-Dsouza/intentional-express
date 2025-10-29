@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  originals-express:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        - DATABASE_URL=${DATABASE_URL}
+        - NODE_ENV=production
+    container_name: originals-express
+    restart: unless-stopped
+    ports:
+      - '${PORT:-3009}:3000'
+    environment:
+      NODE_ENV: production
+      PORT: ${PORT}
+      DATABASE_URL: ${DATABASE_URL}
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.originals-express.rule=Host(`originals-api.jovihost.site`)"
+      - "traefik.http.routers.originals-express.entrypoints=websecure"
+      - "traefik.http.routers.originals-express.tls.certResolver=letsencrypt"
+      - "traefik.http.services.originals-express.loadbalancer.server.port=3009"
+    networks:
+      - dokploy-network
+
+
+networks:
+  dokploy-network:
+    external: true
+      
+
